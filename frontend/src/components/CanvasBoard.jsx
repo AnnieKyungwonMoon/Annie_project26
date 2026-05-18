@@ -1,16 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 
-const CanvasBoard = ({ strokeWidth, tool, color }) => {
+// App.jsx에서 관리하는 lines, setLines, setRedoLines를 받아옵니다.
+const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines }) => {
   const width = window.innerWidth;
   const height = window.innerHeight - 80;
-  const [lines, setLines] = useState([]);
   const isDrawing = useRef(false);
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
-    // 선 데이터에 color 속성을 추가하여 저장
+    
+    // 새로운 선을 그리면 기존의 Redo 기록은 모두 날아갑니다.
+    setRedoLines([]); 
+    
     setLines([...lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color }]);
   };
 
@@ -38,7 +41,7 @@ const CanvasBoard = ({ strokeWidth, tool, color }) => {
             <Line
               key={i}
               points={line.points}
-              stroke={line.color} // 개별 선에 저장된 색상 적용
+              stroke={line.color} 
               strokeWidth={line.strokeWidth} 
               tension={0.5} lineCap="round" lineJoin="round"
               globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
