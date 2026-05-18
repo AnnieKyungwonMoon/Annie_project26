@@ -1,35 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CanvasBoard from './components/CanvasBoard';
-
-// 임시 ToolBar 컴포넌트 (나중에 ToolBar.jsx로 분리할 예정)
-const TempToolBar = () => (
-  <div style={{ 
-    height: '80px', 
-    backgroundColor: '#343a40', 
-    color: 'white', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center' 
-  }}>
-    하단 도구 모음 (펜, 색상, 지우개 등)
-  </div>
-);
+import ToolBar from './components/ToolBar';
 
 function App() {
+  // 펜 굵기 상태 (기본값을 5로 설정합니다)
+  const [strokeWidth, setStrokeWidth] = useState(5);
+
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100vh', 
-      overflow: 'hidden' 
-    }}>
-      {/* 상단 캔버스 영역 (남은 공간을 모두 차지함) */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      
       <div style={{ flex: 1 }}>
-        <CanvasBoard />
+        {/* 캔버스에는 '현재 굵기'만 전달합니다 */}
+        <CanvasBoard strokeWidth={strokeWidth} />
       </div>
       
-      {/* 하단 고정 툴바 영역 */}
-      <TempToolBar />
+      {/* 툴바에는 '현재 굵기'와 '굵기를 바꾸는 리모컨(함수)'을 모두 전달합니다 */}
+      <ToolBar strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth} />
+      
     </div>
   );
 }
