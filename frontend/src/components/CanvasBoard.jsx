@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 
-// App.jsx에서 관리하는 lines, setLines, setRedoLines를 받아옵니다.
-const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines }) => {
+const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing }) => {
   const width = window.innerWidth;
   const height = window.innerHeight - 80;
   const isDrawing = useRef(false);
@@ -10,10 +9,7 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines }
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
-    
-    // 새로운 선을 그리면 기존의 Redo 기록은 모두 날아갑니다.
     setRedoLines([]); 
-    
     setLines([...lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color }]);
   };
 
@@ -29,26 +25,49 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines }
 
   const handleMouseUp = () => { isDrawing.current = false; };
 
+  // 샘플 실사 이미지 (빨간 사과)
+  const sampleImageUrl = "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg";
+
   return (
-    <div style={{ backgroundColor: '#e9ecef', width: '100%', height: '100%' }}>
-      <Stage 
-        width={width} height={height}
-        onMouseDown={handleMouseDown} onMousemove={handleMouseMove} onMouseup={handleMouseUp}
-        onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}
-      >
-        <Layer>
-          {lines.map((line, i) => (
-            <Line
-              key={i}
-              points={line.points}
-              stroke={line.color} 
-              strokeWidth={line.strokeWidth} 
-              tension={0.5} lineCap="round" lineJoin="round"
-              globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-            />
-          ))}
-        </Layer>
-      </Stage>
+    <div style={{ backgroundColor: '#e9ecef', width: '100%', height: '100%', position: 'relative' }}>
+      
+      {/* isTracing이 true일 때만 밑그림 렌더링 */}
+      {isTracing && (
+        <img 
+          src={sampleImageUrl} 
+          alt=" reference" 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            maxWidth: '90%',
+            maxHeight: '90%',
+            opacity: 0.7, // 70% 투명도
+            pointerEvents: 'none', // 마우스 이벤트 투과 (그리기 방해 안 함)
+            zIndex: 0
+          }} 
+        />
+      )}
+
+      {/* Konva Stage의 zIndex를 높여 위로 올림 */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <Stage 
+          width={width} height={height}
+          onMouseDown={handleMouseDown} onMousemove={handleMouseMove} onMouseup={handleMouseUp}
+          onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}
+        >
+          <Layer>
+            {lines.map((line, i) => (
+              <Line
+                key={i} points={line.points} stroke={line.color} strokeWidth={line.strokeWidth} 
+                tension={0.5} lineCap="round" lineJoin="round"
+                globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+              />
+            ))}
+          </Layer>
+        </Stage>
+      </div>
     </div>
   );
 };
