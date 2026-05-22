@@ -3,7 +3,8 @@ import React from 'react';
 const ToolBar = ({ 
   strokeWidth, setStrokeWidth, tool, setTool, color, setColor,
   handleUndo, handleRedo, canUndo, canRedo,
-  isTracing, setIsTracing 
+  isTracing, setIsTracing,
+  handleDownload
 }) => {
   return (
     <div style={{
@@ -20,14 +21,8 @@ const ToolBar = ({
         <button onClick={() => setTool('eraser')} style={{ backgroundColor: tool === 'eraser' ? '#ff8787' : '#e9ecef' }}>🧽</button>
       </div>
 
-      {/* 밑그림(트레이싱) 토글 버튼 추가 */}
       <div style={{ display: 'flex' }}>
-        <button 
-          onClick={() => setIsTracing(!isTracing)} 
-          style={{ backgroundColor: isTracing ? '#ffd43b' : '#e9ecef' }}
-        >
-          📸 밑그림
-        </button>
+        <button onClick={() => setIsTracing(!isTracing)} style={{ backgroundColor: isTracing ? '#ffd43b' : '#e9ecef' }}>📸 밑그림</button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -41,6 +36,11 @@ const ToolBar = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
         <span style={{ fontSize: '12px' }}>{strokeWidth}px</span>
         <input id="thickness" type="range" min="1" max="50" value={strokeWidth} onChange={(e) => setStrokeWidth(parseInt(e.target.value))} style={{ width: '80px' }} />
+      </div>
+
+      {/* 다운로드 버튼 추가 */}
+      <div style={{ display: 'flex' }}>
+        <button onClick={handleDownload} style={{ backgroundColor: '#20c997', color: 'white', fontWeight: 'bold' }}>💾 저장</button>
       </div>
     </div>
   );
