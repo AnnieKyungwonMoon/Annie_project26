@@ -1,8 +1,7 @@
 import React, { useRef } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 
-// App.jsx에서 넘어온 stageRef를 받습니다.
-const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing, stageRef }) => {
+const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing, stageRef, tracingImage }) => {
   const width = window.innerWidth;
   const height = window.innerHeight - 80;
   const isDrawing = useRef(false);
@@ -26,13 +25,11 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, 
 
   const handleMouseUp = () => { isDrawing.current = false; };
 
-  const sampleImageUrl = "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg";
-
   return (
     <div style={{ backgroundColor: '#e9ecef', width: '100%', height: '100%', position: 'relative' }}>
-      {isTracing && (
+      {isTracing && tracingImage && (
         <img 
-          src={sampleImageUrl} alt="tracing reference" 
+          src={tracingImage} alt="tracing reference" 
           style={{
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
             maxWidth: '90%', maxHeight: '90%', opacity: 0.7, pointerEvents: 'none', zIndex: 0
@@ -41,7 +38,6 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, 
       )}
 
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Stage 컴포넌트에 ref 속성을 연결합니다 */}
         <Stage 
           width={width} height={height} ref={stageRef}
           onMouseDown={handleMouseDown} onMousemove={handleMouseMove} onMouseup={handleMouseUp}
