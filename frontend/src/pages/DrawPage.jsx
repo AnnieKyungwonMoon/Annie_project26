@@ -11,6 +11,8 @@ const DrawPage = () => {
   const [strokeWidth, setStrokeWidth] = useState(5);
   const [tool, setTool] = useState('pen');
   const [color, setColor] = useState('#000000');
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [bgImageUrl, setBgImageUrl] = useState(null); // 커스텀 배경 이미지 URL
   const [lines, setLines] = useState([]);
   const [redoLines, setRedoLines] = useState([]);
   
@@ -41,7 +43,15 @@ const DrawPage = () => {
 
   const handleDownload = () => {
     if (!stageRef.current) return;
-    const uri = stageRef.current.toDataURL({ pixelRatio: 2 }); 
+    
+    const stage = stageRef.current;
+    const gridGroup = stage.findOne('#gridGroup');
+    if (gridGroup) gridGroup.hide();
+
+    const uri = stage.toDataURL({ pixelRatio: 2 }); 
+
+    if (gridGroup) gridGroup.show();
+
     const link = document.createElement('a');
     link.download = 'my_artwork.png';
     link.href = uri;
@@ -58,6 +68,17 @@ const DrawPage = () => {
     setIsTracing(true); 
   };
 
+  const handleBgImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const imageUrl = URL.createObjectURL(file);
+    setBgImageUrl(imageUrl);
+  };
+
+  const handleRemoveBgImage = () => {
+    setBgImageUrl(null);
+  };
+
   const goHome = () => {
     navigate('/');
   };
@@ -66,7 +87,8 @@ const DrawPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <div style={{ flex: 1 }}>
         <CanvasBoard 
-          strokeWidth={strokeWidth} tool={tool} color={color} 
+          strokeWidth={strokeWidth} tool={tool} color={color} bgColor={bgColor}
+          bgImageUrl={bgImageUrl}
           lines={lines} setLines={setLines} setRedoLines={setRedoLines} 
           isTracing={isTracing}
           isGrid={isGrid} // 캔버스에 보조선 상태 전달
@@ -78,6 +100,7 @@ const DrawPage = () => {
         strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth} 
         tool={tool} setTool={setTool} 
         color={color} setColor={setColor}
+        bgColor={bgColor} setBgColor={setBgColor}
         handleUndo={handleUndo} handleRedo={handleRedo}
         canUndo={lines.length > 0} canRedo={redoLines.length > 0}
         isTracing={isTracing} setIsTracing={setIsTracing}
@@ -85,6 +108,9 @@ const DrawPage = () => {
         handleDownload={handleDownload}
         isFreeMode={isFreeMode}
         handleImageUpload={handleImageUpload}
+        handleBgImageUpload={handleBgImageUpload}
+        bgImageUrl={bgImageUrl}
+        handleRemoveBgImage={handleRemoveBgImage}
         goHome={goHome}
       />
     </div>

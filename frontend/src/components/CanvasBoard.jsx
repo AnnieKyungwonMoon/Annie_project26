@@ -1,10 +1,35 @@
-import React, { useRef } from 'react';
-import { Stage, Layer, Line } from 'react-konva';
+import React, { useRef, useState, useEffect } from 'react';
+import { Stage, Layer, Line, Rect, Image as KonvaImage, Group } from 'react-konva';
 
-const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
+const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
   const width = window.innerWidth;
   const height = window.innerHeight - 80;
   const isDrawing = useRef(false);
+
+  const [bgImageObj, setBgImageObj] = useState(null);
+
+  useEffect(() => {
+    if (bgImageUrl) {
+      const img = new window.Image();
+      img.src = bgImageUrl;
+      img.onload = () => {
+        setBgImageObj(img);
+      };
+    } else {
+      setBgImageObj(null);
+    }
+  }, [bgImageUrl]);
+
+  const gridSize = 40;
+  const gridLines = [];
+  if (isGrid) {
+    for (let i = 0; i < width / gridSize; i++) {
+      gridLines.push(<Line key={`v${i}`} points={[Math.round(i * gridSize) + 0.5, 0, Math.round(i * gridSize) + 0.5, height]} stroke="#dee2e6" strokeWidth={1} listening={false} />);
+    }
+    for (let j = 0; j < height / gridSize; j++) {
+      gridLines.push(<Line key={`h${j}`} points={[0, Math.round(j * gridSize) + 0.5, width, Math.round(j * gridSize) + 0.5]} stroke="#dee2e6" strokeWidth={1} listening={false} />);
+    }
+  }
 
   const handleMouseDown = (e) => {
     isDrawing.current = true;
@@ -37,16 +62,6 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, 
         />
       )}
 
-      {/* 보조선(그리드) - CSS 렌더링으로 캡처 스코프(Stage) 밖에서 그려짐 */}
-      {isGrid && (
-        <div style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          pointerEvents: 'none', zIndex: 0,
-          backgroundImage: 'linear-gradient(to right, #dee2e6 1px, transparent 1px), linear-gradient(to bottom, #dee2e6 1px, transparent 1px)',
-          backgroundSize: '40px 40px'
-        }} />
-      )}
-
       <div style={{ position: 'relative', zIndex: 1 }}>
         <Stage 
           width={width} height={height} ref={stageRef}
@@ -54,6 +69,18 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, 
           onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}
         >
           <Layer>
+            {/* 1. 최하단: 배경색 */}
+            {!isTracing && <Rect width={width} height={height} fill={bgColor} />}
+            
+            {/* 2. 중하단: 커스텀 배경 이미지 */}
+            {!isTracing && bgImageObj && (
+              <KonvaImage image={bgImageObj} width={width} height={height} />
+            )}
+
+            {/* 3. 중상단: 보조선 (다운로드 방지를 위해 id="gridGroup" 부여) */}
+            {isGrid && <Group id="gridGroup" listening={false}>{gridLines}</Group>}
+            
+            {/* 4. 최상단: 드로잉 선화 */}
             {lines.map((line, i) => (
               <Line
                 key={i} points={line.points} stroke={line.color} strokeWidth={line.strokeWidth} 
