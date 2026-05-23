@@ -4,6 +4,7 @@ const ToolBar = ({
   strokeWidth, setStrokeWidth, tool, setTool, color, setColor,
   handleUndo, handleRedo, canUndo, canRedo,
   isTracing, setIsTracing,
+  isGrid, setIsGrid,
   handleDownload,
   isFreeMode, handleImageUpload, goHome
 }) => {
@@ -52,8 +53,9 @@ const ToolBar = ({
         </div>
       )}
 
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: '5px' }}>
         <button onClick={() => setIsTracing(!isTracing)} style={{ backgroundColor: isTracing ? '#ffd43b' : '#e9ecef' }}>📸 밑그림</button>
+        <button onClick={() => setIsGrid(!isGrid)} style={{ backgroundColor: isGrid ? '#ffd43b' : '#e9ecef' }}>📏 보조선</button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

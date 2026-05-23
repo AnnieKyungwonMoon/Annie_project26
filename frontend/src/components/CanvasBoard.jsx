@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Stage, Layer, Line } from 'react-konva';
 
-const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing, stageRef, tracingImage }) => {
+const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
   const width = window.innerWidth;
   const height = window.innerHeight - 80;
   const isDrawing = useRef(false);
@@ -35,6 +35,16 @@ const CanvasBoard = ({ strokeWidth, tool, color, lines, setLines, setRedoLines, 
             maxWidth: '90%', maxHeight: '90%', opacity: 0.7, pointerEvents: 'none', zIndex: 0
           }} 
         />
+      )}
+
+      {/* 보조선(그리드) - CSS 렌더링으로 캡처 스코프(Stage) 밖에서 그려짐 */}
+      {isGrid && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          pointerEvents: 'none', zIndex: 0,
+          backgroundImage: 'linear-gradient(to right, #dee2e6 1px, transparent 1px), linear-gradient(to bottom, #dee2e6 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
       )}
 
       <div style={{ position: 'relative', zIndex: 1 }}>

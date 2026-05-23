@@ -19,6 +19,7 @@ const DrawPage = () => {
   
   const [isTracing, setIsTracing] = useState(!isFreeMode); 
   const [tracingImage, setTracingImage] = useState(stageData?.image || null);
+  const [isGrid, setIsGrid] = useState(false); // 보조선 토글 상태 추가
   
   const stageRef = useRef(null);
 
@@ -68,6 +69,7 @@ const DrawPage = () => {
           strokeWidth={strokeWidth} tool={tool} color={color} 
           lines={lines} setLines={setLines} setRedoLines={setRedoLines} 
           isTracing={isTracing}
+          isGrid={isGrid} // 캔버스에 보조선 상태 전달
           stageRef={stageRef}
           tracingImage={tracingImage}
         />
@@ -79,6 +81,7 @@ const DrawPage = () => {
         handleUndo={handleUndo} handleRedo={handleRedo}
         canUndo={lines.length > 0} canRedo={redoLines.length > 0}
         isTracing={isTracing} setIsTracing={setIsTracing}
+        isGrid={isGrid} setIsGrid={setIsGrid} // 툴바에 보조선 제어 전달
         handleDownload={handleDownload}
         isFreeMode={isFreeMode}
         handleImageUpload={handleImageUpload}
