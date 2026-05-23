@@ -7,7 +7,8 @@ const ToolBar = ({
   isTracing, setIsTracing,
   isGrid, setIsGrid,
   handleDownload,
-  isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, goHome
+  isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, 
+  handleBgColorReset, handleClearAll, goHome
 }) => {
   const fileInputRef = useRef(null);
   const bgInputRef = useRef(null);
@@ -38,6 +39,7 @@ const ToolBar = ({
       <div style={{ display: 'flex', gap: '5px' }}>
         <button onClick={handleUndo} disabled={!canUndo} style={{ cursor: canUndo ? 'pointer' : 'not-allowed', opacity: canUndo ? 1 : 0.5 }}>↩️</button>
         <button onClick={handleRedo} disabled={!canRedo} style={{ cursor: canRedo ? 'pointer' : 'not-allowed', opacity: canRedo ? 1 : 0.5 }}>↪️</button>
+        <button onClick={handleClearAll} style={{ backgroundColor: '#e03131', color: 'white', fontWeight: 'bold' }}>🗑️ 전체삭제</button>
       </div>
 
       <div style={{ display: 'flex' }}>
@@ -93,6 +95,7 @@ const ToolBar = ({
           disabled={isTracing}
           style={{ cursor: isTracing ? 'not-allowed' : 'pointer', width: '35px', height: '35px', border: 'none', borderRadius: '5px' }}
         />
+        <button onClick={handleBgColorReset} style={{ fontSize: '12px', padding: '5px 10px' }} title="배경 리셋">🎨 배경 리셋</button>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>

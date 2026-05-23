@@ -79,6 +79,17 @@ const DrawPage = () => {
     setBgImageUrl(null);
   };
 
+  const handleBgColorReset = () => {
+    setBgColor('#ffffff');
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("그려진 모든 그림을 지우시겠습니까?")) {
+      setLines([]);
+      setRedoLines([]);
+    }
+  };
+
   const goHome = () => {
     navigate('/');
   };
@@ -111,6 +122,8 @@ const DrawPage = () => {
         handleBgImageUpload={handleBgImageUpload}
         bgImageUrl={bgImageUrl}
         handleRemoveBgImage={handleRemoveBgImage}
+        handleBgColorReset={handleBgColorReset}
+        handleClearAll={handleClearAll}
         goHome={goHome}
       />
     </div>
