@@ -1,0 +1,303 @@
+import React, { useRef } from 'react';
+import { HexColorPicker } from 'react-colorful';
+
+const SidePanel = ({ 
+  strokeWidth, setStrokeWidth, tool, setTool, color, setColor,
+  bgColor, setBgColor,
+  opacity, setOpacity,
+  handleUndo, handleRedo, canUndo, canRedo,
+  isTracing, setIsTracing,
+  isGrid, setIsGrid,
+  handleDownload,
+  isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, 
+  handleBgColorReset, handleClearAll, goHome
+}) => {
+  const fileInputRef = useRef(null);
+  const bgInputRef = useRef(null);
+
+  const triggerUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const triggerBgUpload = () => {
+    if (bgInputRef.current) {
+      bgInputRef.current.click();
+    }
+  };
+
+  const sectionStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    paddingBottom: '20px',
+    borderBottom: '1px solid #343a40',
+  };
+
+  const labelStyle = {
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: '#adb5bd',
+    marginBottom: '4px',
+  };
+
+  const rowStyle = {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+  };
+
+  const buttonStyle = {
+    padding: '10px 12px',
+    borderRadius: '6px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    transition: 'all 0.2s ease',
+  };
+
+  return (
+    <div style={{
+      width: '300px',
+      height: '100vh',
+      backgroundColor: '#212529',
+      color: '#f8f9fa',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+      padding: '20px',
+      boxSizing: 'border-box',
+      borderLeft: '1px solid #343a40',
+      overflowY: 'auto'
+    }}>
+      {/* 상단 네비게이션 & 저장 */}
+      <div style={sectionStyle}>
+        <div style={rowStyle}>
+          <button onClick={goHome} style={{ ...buttonStyle, flex: 1, backgroundColor: '#495057', color: 'white' }}>
+            🏠 홈으로
+          </button>
+          <button onClick={handleDownload} style={{ ...buttonStyle, flex: 1, backgroundColor: '#20c997', color: 'white' }}>
+            💾 저장하기
+          </button>
+        </div>
+      </div>
+
+      {/* 1구역: 도구 및 그리기 설정 */}
+      <div style={sectionStyle}>
+        <div style={labelStyle}>🖌️ 그리기 도구</div>
+        <div style={rowStyle}>
+          <button 
+            onClick={() => setTool('pen')} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: tool === 'pen' ? '#228be6' : '#e9ecef', 
+              color: tool === 'pen' ? 'white' : '#212529' 
+            }}
+          >
+            ✏️ 펜
+          </button>
+          <button 
+            onClick={() => setTool('eraser')} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: tool === 'eraser' ? '#fa5252' : '#e9ecef',
+              color: tool === 'eraser' ? 'white' : '#212529'
+            }}
+          >
+            🧽 지우개
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#adb5bd' }}>펜 색상</span>
+          {tool === 'eraser' ? (
+            <div style={{
+              height: '180px', backgroundColor: '#343a40', borderRadius: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#adb5bd',
+              fontSize: '14px', border: '1px dashed #495057', boxSizing: 'border-box'
+            }}>
+              지우개 모드 활성화됨
+            </div>
+          ) : (
+            <div style={{ width: '100%' }}>
+              <HexColorPicker color={color} onChange={setColor} style={{ width: '100%', height: '180px' }} />
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#adb5bd' }}>
+            <span>브러쉬 두께</span>
+            <span>{strokeWidth}px</span>
+          </div>
+          <input 
+            id="thickness" type="range" min="1" max="50" value={strokeWidth} 
+            onChange={(e) => setStrokeWidth(parseInt(e.target.value))} 
+            style={{ width: '100%', cursor: 'pointer' }} 
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#adb5bd' }}>
+            <span>투명도</span>
+            <span>{Math.round(opacity * 100)}%</span>
+          </div>
+          <input 
+            id="opacity" type="range" min="1" max="100" value={Math.round(opacity * 100)} 
+            onChange={(e) => setOpacity(parseFloat(e.target.value) / 100)} 
+            style={{ width: '100%', cursor: 'pointer' }} 
+          />
+        </div>
+      </div>
+
+      {/* 2구역: 캔버스 배경 설정 */}
+      <div style={sectionStyle}>
+        <div style={labelStyle}>🎨 캔버스 배경</div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <span style={{ fontSize: '12px', color: '#adb5bd' }}>배경 색상</span>
+          <div style={rowStyle}>
+            <input 
+              id="bgColorPicker" title="배경 색상" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)}
+              disabled={isTracing}
+              style={{ cursor: isTracing ? 'not-allowed' : 'pointer', flex: 1, height: '36px', border: 'none', borderRadius: '4px', padding: 0 }}
+            />
+            <button 
+              onClick={handleBgColorReset} 
+              style={{ ...buttonStyle, backgroundColor: '#495057', color: 'white', height: '36px', fontSize: '12px' }}
+              title="배경 흰색으로 초기화"
+            >
+              🎨 리셋
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+          <span style={{ fontSize: '12px', color: '#adb5bd' }}>배경 이미지</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button onClick={triggerBgUpload} style={{ ...buttonStyle, backgroundColor: '#ae3ec9', color: 'white', width: '100%' }}>
+              🖼️ 배경 사진 업로드
+            </button>
+            <input 
+              type="file" 
+              accept="image/*" 
+              ref={bgInputRef} 
+              onChange={handleBgImageUpload} 
+              style={{ display: 'none' }} 
+            />
+            {bgImageUrl && (
+              <button onClick={handleRemoveBgImage} style={{ ...buttonStyle, backgroundColor: '#e03131', color: 'white', width: '100%' }}>
+                ❌ 배경 사진 삭제
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3구역: 밑그림 및 보조선 */}
+      <div style={sectionStyle}>
+        <div style={labelStyle}>📏 가이드 및 트레이싱</div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button onClick={triggerUpload} style={{ ...buttonStyle, backgroundColor: '#f59f00', color: 'white', width: '100%' }}>
+            🖼️ 밑그림 사진 등록
+          </button>
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={fileInputRef} 
+            onChange={handleImageUpload} 
+            style={{ display: 'none' }} 
+          />
+          
+          <div style={rowStyle}>
+            <button 
+              onClick={() => setIsTracing(!isTracing)} 
+              style={{ 
+                ...buttonStyle, 
+                flex: 1, 
+                backgroundColor: isTracing ? '#f59f00' : '#495057', 
+                color: 'white',
+                fontSize: '13px'
+              }}
+            >
+              📸 밑그림 {isTracing ? '숨김' : '보임'}
+            </button>
+            <button 
+              onClick={() => setIsGrid(!isGrid)} 
+              style={{ 
+                ...buttonStyle, 
+                flex: 1, 
+                backgroundColor: isGrid ? '#74b816' : '#495057', 
+                color: 'white',
+                fontSize: '13px'
+              }}
+            >
+              📏 보조선 {isGrid ? '끄기' : '켜기'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4구역: 편집 및 초기화 */}
+      <div style={{ ...sectionStyle, borderBottom: 'none' }}>
+        <div style={labelStyle}>⚙️ 편집 제어</div>
+        <div style={rowStyle}>
+          <button 
+            onClick={handleUndo} 
+            disabled={!canUndo} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: '#495057', 
+              color: 'white',
+              cursor: canUndo ? 'pointer' : 'not-allowed', 
+              opacity: canUndo ? 1 : 0.5 
+            }}
+          >
+            ↩️ 실행취소
+          </button>
+          <button 
+            onClick={handleRedo} 
+            disabled={!canRedo} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: '#495057', 
+              color: 'white',
+              cursor: canRedo ? 'pointer' : 'not-allowed', 
+              opacity: canRedo ? 1 : 0.5 
+            }}
+          >
+            ↪️ 다시실행
+          </button>
+        </div>
+        <button 
+          onClick={handleClearAll} 
+          disabled={!canUndo}
+          style={{ 
+            ...buttonStyle, 
+            backgroundColor: '#e03131', 
+            color: 'white',
+            width: '100%',
+            marginTop: '4px',
+            cursor: canUndo ? 'pointer' : 'not-allowed',
+            opacity: canUndo ? 1 : 0.5
+          }}
+        >
+          🗑️ 전체 삭제 (초기화)
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SidePanel;

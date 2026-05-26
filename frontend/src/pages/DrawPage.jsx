@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CanvasBoard from '../components/CanvasBoard';
-import ToolBar from '../components/ToolBar';
+import SidePanel from '../components/SidePanel';
 import { STAGES } from './Home';
 
 const DrawPage = () => {
@@ -13,6 +13,7 @@ const DrawPage = () => {
   const [color, setColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');
   const [bgImageUrl, setBgImageUrl] = useState(null); // 커스텀 배경 이미지 URL
+  const [opacity, setOpacity] = useState(1.0); // 브러시 투명도 상태 추가 (기본값: 1.0)
   const [lines, setLines] = useState([]);
   const [redoLines, setRedoLines] = useState([]);
   
@@ -95,11 +96,11 @@ const DrawPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'row', height: '100vh', overflow: 'hidden' }}>
       <div style={{ flex: 1 }}>
         <CanvasBoard 
           strokeWidth={strokeWidth} tool={tool} color={color} bgColor={bgColor}
-          bgImageUrl={bgImageUrl}
+          bgImageUrl={bgImageUrl} opacity={opacity}
           lines={lines} setLines={setLines} setRedoLines={setRedoLines} 
           isTracing={isTracing}
           isGrid={isGrid} // 캔버스에 보조선 상태 전달
@@ -107,11 +108,12 @@ const DrawPage = () => {
           tracingImage={tracingImage}
         />
       </div>
-      <ToolBar 
+      <SidePanel 
         strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth} 
         tool={tool} setTool={setTool} 
         color={color} setColor={setColor}
         bgColor={bgColor} setBgColor={setBgColor}
+        opacity={opacity} setOpacity={setOpacity}
         handleUndo={handleUndo} handleRedo={handleRedo}
         canUndo={lines.length > 0} canRedo={redoLines.length > 0}
         isTracing={isTracing} setIsTracing={setIsTracing}

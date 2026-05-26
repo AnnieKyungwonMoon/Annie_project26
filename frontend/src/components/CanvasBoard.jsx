@@ -1,9 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Line, Rect, Image as KonvaImage, Group } from 'react-konva';
 
-const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
-  const width = window.innerWidth;
-  const height = window.innerHeight - 80;
+const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, opacity, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
+  const width = window.innerWidth - 300;
+  const height = window.innerHeight;
   const isDrawing = useRef(false);
 
   const [bgImageObj, setBgImageObj] = useState(null);
@@ -35,7 +35,7 @@ const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, lines, set
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
     setRedoLines([]); 
-    setLines([...lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color }]);
+    setLines([...lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color, opacity: opacity }]);
   };
 
   const handleMouseMove = (e) => {
@@ -84,6 +84,7 @@ const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, lines, set
             {lines.map((line, i) => (
               <Line
                 key={i} points={line.points} stroke={line.color} strokeWidth={line.strokeWidth} 
+                opacity={line.opacity !== undefined ? line.opacity : 1}
                 tension={0.5} lineCap="round" lineJoin="round"
                 globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
               />
