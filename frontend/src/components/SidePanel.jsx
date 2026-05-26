@@ -10,7 +10,12 @@ const SidePanel = ({
   isGrid, setIsGrid,
   handleDownload,
   isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, 
-  handleBgColorReset, handleClearAll, goHome
+  handleBgColorReset, handleClearAll,
+  
+  // 레이어 관련 Props 추가
+  layers, activeLayerId, handleAddLayer, handleToggleLayerVisibility, handleDeleteLayer, handleSelectLayer, hasAnyLines,
+  
+  goHome
 }) => {
   const fileInputRef = useRef(null);
   const bgInputRef = useRef(null);
@@ -247,50 +252,135 @@ const SidePanel = ({
         </div>
       </div>
 
-      {/* 4구역: 편집 및 초기화 */}
+      {/* 4구역: 레이어 패널 추가 */}
+      <div style={sectionStyle}>
+        <div style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>LAYERS (레이어)</span>
+          <button 
+            onClick={handleAddLayer} 
+            style={{ 
+              backgroundColor: '#228be6', color: 'white', border: 'none', 
+              borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+              fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px'
+            }}
+          >
+            ➕ 추가
+          </button>
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          maxHeight: '180px',
+          overflowY: 'auto',
+          paddingRight: '2px'
+        }}>
+          {layers.map((layer) => {
+            const isActive = layer.id === activeLayerId;
+            return (
+              <div 
+                key={layer.id}
+                onClick={() => handleSelectLayer(layer.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: isActive ? '#1c7ed6' : '#2b3035',
+                  color: isActive ? 'white' : '#f8f9fa',
+                  border: isActive ? '1px solid #339af0' : '1px solid #343a40',
+                  transition: 'all 0.15s ease',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleLayerVisibility(layer.id);
+                    }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                      fontSize: '14px', opacity: layer.visible ? 1 : 0.4,
+                      color: isActive ? 'white' : '#adb5bd'
+                    }}
+                    title={layer.visible ? "레이어 숨기기" : "레이어 보이기"}
+                  >
+                    {layer.visible ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                  <span style={{ fontSize: '13px', fontWeight: isActive ? 'bold' : 'normal' }}>
+                    {layer.name}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteLayer(layer.id);
+                  }}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                    fontSize: '13px', color: isActive ? '#ffc9c9' : '#fa5252',
+                    opacity: layers.length > 1 ? 1 : 0.3
+                  }}
+                  disabled={layers.length <= 1}
+                  title="레이어 삭제"
+                >
+                  🗑️
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5구역: 편집 및 초기화 */}
       <div style={{ ...sectionStyle, borderBottom: 'none' }}>
         <div style={labelStyle}>⚙️ 편집 제어</div>
         <div style={rowStyle}>
           <button 
-            onClick={handleUndo} 
-            disabled={!canUndo} 
+            disabled 
             style={{ 
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: '#495057', 
               color: 'white',
-              cursor: canUndo ? 'pointer' : 'not-allowed', 
-              opacity: canUndo ? 1 : 0.5 
+              cursor: 'not-allowed', 
+              opacity: 0.3 
             }}
+            title="레이어 모드에서 임시 비활성화됨"
           >
             ↩️ 실행취소
           </button>
           <button 
-            onClick={handleRedo} 
-            disabled={!canRedo} 
+            disabled 
             style={{ 
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: '#495057', 
               color: 'white',
-              cursor: canRedo ? 'pointer' : 'not-allowed', 
-              opacity: canRedo ? 1 : 0.5 
+              cursor: 'not-allowed', 
+              opacity: 0.3 
             }}
+            title="레이어 모드에서 임시 비활성화됨"
           >
             ↪️ 다시실행
           </button>
         </div>
         <button 
           onClick={handleClearAll} 
-          disabled={!canUndo}
+          disabled={!hasAnyLines}
           style={{ 
             ...buttonStyle, 
             backgroundColor: '#e03131', 
             color: 'white',
             width: '100%',
             marginTop: '4px',
-            cursor: canUndo ? 'pointer' : 'not-allowed',
-            opacity: canUndo ? 1 : 0.5
+            cursor: hasAnyLines ? 'pointer' : 'not-allowed',
+            opacity: hasAnyLines ? 1 : 0.5
           }}
         >
           🗑️ 전체 삭제 (초기화)

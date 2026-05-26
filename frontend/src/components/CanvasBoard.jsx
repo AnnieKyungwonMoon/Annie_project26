@@ -1,7 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Stage, Layer, Line, Rect, Image as KonvaImage, Group } from 'react-konva';
 
-const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, opacity, lines, setLines, setRedoLines, isTracing, isGrid, stageRef, tracingImage }) => {
+const CanvasBoard = ({ 
+  strokeWidth, tool, color, bgColor, bgImageUrl, opacity, 
+  layers, setLayers, activeLayerId, 
+  isTracing, isGrid, stageRef, tracingImage 
+}) => {
   const width = window.innerWidth - 300;
   const height = window.innerHeight;
   const isDrawing = useRef(false);
@@ -34,21 +38,41 @@ const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, opacity, l
   const handleMouseDown = (e) => {
     isDrawing.current = true;
     const pos = e.target.getStage().getPointerPosition();
-    setRedoLines([]); 
-    setLines([...lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color, opacity: opacity }]);
+    
+    // activeLayerId에 해당하는 레이어를 찾아 새로운 획(lines)을 삽입
+    setLayers(layers.map(layer => {
+      if (layer.id === activeLayerId) {
+        return {
+          ...layer,
+          lines: [...layer.lines, { points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color, opacity: opacity }]
+        };
+      }
+      return layer;
+    }));
   };
 
   const handleMouseMove = (e) => {
     if (!isDrawing.current) return;
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
-    let lastLine = lines[lines.length - 1]; 
-    lastLine.points = lastLine.points.concat([point.x, point.y]);
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines(lines.concat()); 
+
+    // activeLayerId에 해당하는 레이어의 마지막 획에 좌표 추가
+    setLayers(layers.map(layer => {
+      if (layer.id === activeLayerId) {
+        if (layer.lines.length === 0) return layer;
+        const lastLine = { ...layer.lines[layer.lines.length - 1] };
+        lastLine.points = lastLine.points.concat([point.x, point.y]);
+        const newLines = [...layer.lines];
+        newLines[newLines.length - 1] = lastLine;
+        return { ...layer, lines: newLines };
+      }
+      return layer;
+    }));
   };
 
-  const handleMouseUp = () => { isDrawing.current = false; };
+  const handleMouseUp = () => { 
+    isDrawing.current = false; 
+  };
 
   return (
     <div style={{ backgroundColor: '#e9ecef', width: '100%', height: '100%', position: 'relative' }}>
@@ -68,6 +92,7 @@ const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, opacity, l
           onMouseDown={handleMouseDown} onMousemove={handleMouseMove} onMouseup={handleMouseUp}
           onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp}
         >
+          {/* 최하단 전용 Layer: 배경색, 배경 사진, 보조선 */}
           <Layer>
             {/* 1. 최하단: 배경색 */}
             {!isTracing && <Rect width={width} height={height} fill={bgColor} />}
@@ -77,19 +102,23 @@ const CanvasBoard = ({ strokeWidth, tool, color, bgColor, bgImageUrl, opacity, l
               <KonvaImage image={bgImageObj} width={width} height={height} />
             )}
 
-            {/* 3. 중상단: 보조선 (다운로드 방지를 위해 id="gridGroup" 부여) */}
+            {/* 3. 중상단: 보조선 */}
             {isGrid && <Group id="gridGroup" listening={false}>{gridLines}</Group>}
-            
-            {/* 4. 최상단: 드로잉 선화 */}
-            {lines.map((line, i) => (
-              <Line
-                key={i} points={line.points} stroke={line.color} strokeWidth={line.strokeWidth} 
-                opacity={line.opacity !== undefined ? line.opacity : 1}
-                tension={0.5} lineCap="round" lineJoin="round"
-                globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
-              />
-            ))}
           </Layer>
+
+          {/* 그 위로 사용자 layers 순회하며 각각의 Layer 컴포넌트로 분리하여 렌더링 */}
+          {layers.map((layer) => (
+            <Layer key={layer.id} visible={layer.visible}>
+              {layer.lines.map((line, i) => (
+                <Line
+                  key={i} points={line.points} stroke={line.color} strokeWidth={line.strokeWidth} 
+                  opacity={line.opacity !== undefined ? line.opacity : 1}
+                  tension={0.5} lineCap="round" lineJoin="round"
+                  globalCompositeOperation={line.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                />
+              ))}
+            </Layer>
+          ))}
         </Stage>
       </div>
     </div>

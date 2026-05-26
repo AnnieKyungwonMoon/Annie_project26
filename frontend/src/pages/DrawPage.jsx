@@ -14,8 +14,12 @@ const DrawPage = () => {
   const [bgColor, setBgColor] = useState('#ffffff');
   const [bgImageUrl, setBgImageUrl] = useState(null); // 커스텀 배경 이미지 URL
   const [opacity, setOpacity] = useState(1.0); // 브러시 투명도 상태 추가 (기본값: 1.0)
-  const [lines, setLines] = useState([]);
-  const [redoLines, setRedoLines] = useState([]);
+  
+  // 다중 레이어 상태 추가
+  const [layers, setLayers] = useState([
+    { id: 1, name: '레이어 1', visible: true, lines: [] }
+  ]);
+  const [activeLayerId, setActiveLayerId] = useState(1);
   
   const stageData = STAGES.find(s => s.id === stageId);
   const isFreeMode = stageId === 'free';
@@ -26,21 +30,9 @@ const DrawPage = () => {
   
   const stageRef = useRef(null);
 
-  const handleUndo = () => {
-    if (lines.length === 0) return;
-    const newLines = [...lines];
-    const poppedLine = newLines.pop();
-    setRedoLines([...redoLines, poppedLine]);
-    setLines(newLines);
-  };
-
-  const handleRedo = () => {
-    if (redoLines.length === 0) return;
-    const newRedo = [...redoLines];
-    const poppedRedo = newRedo.pop();
-    setLines([...lines, poppedRedo]);
-    setRedoLines(newRedo);
-  };
+  // Undo/Redo는 레이어 시스템 리팩토링 중 잠시 비활성화
+  const handleUndo = () => {};
+  const handleRedo = () => {};
 
   const handleDownload = () => {
     if (!stageRef.current) return;
@@ -86,14 +78,52 @@ const DrawPage = () => {
 
   const handleClearAll = () => {
     if (window.confirm("그려진 모든 그림을 지우시겠습니까?")) {
-      setLines([]);
-      setRedoLines([]);
+      setLayers(layers.map(l => ({ ...l, lines: [] })));
     }
+  };
+
+  // 레이어 추가 핸들러
+  const handleAddLayer = () => {
+    const nextId = layers.length > 0 ? Math.max(...layers.map(l => l.id)) + 1 : 1;
+    const newLayer = {
+      id: nextId,
+      name: `레이어 ${nextId}`,
+      visible: true,
+      lines: []
+    };
+    setLayers([...layers, newLayer]);
+    setActiveLayerId(nextId);
+  };
+
+  // 레이어 가시성 토글 핸들러
+  const handleToggleLayerVisibility = (id) => {
+    setLayers(layers.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
+  };
+
+  // 레이어 삭제 핸들러
+  const handleDeleteLayer = (id) => {
+    if (layers.length <= 1) {
+      alert("최소 하나의 레이어는 존재해야 합니다.");
+      return;
+    }
+    const newLayers = layers.filter(l => l.id !== id);
+    setLayers(newLayers);
+    if (activeLayerId === id) {
+      setActiveLayerId(newLayers[newLayers.length - 1].id);
+    }
+  };
+
+  // 레이어 선택 핸들러
+  const handleSelectLayer = (id) => {
+    setActiveLayerId(id);
   };
 
   const goHome = () => {
     navigate('/');
   };
+
+  // 레이어에 그려진 선이 있는지 체크 (전체삭제 비활성화 제어용)
+  const hasAnyLines = layers.some(l => l.lines.length > 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', height: '100vh', overflow: 'hidden' }}>
@@ -101,9 +131,9 @@ const DrawPage = () => {
         <CanvasBoard 
           strokeWidth={strokeWidth} tool={tool} color={color} bgColor={bgColor}
           bgImageUrl={bgImageUrl} opacity={opacity}
-          lines={lines} setLines={setLines} setRedoLines={setRedoLines} 
+          layers={layers} setLayers={setLayers} activeLayerId={activeLayerId}
           isTracing={isTracing}
-          isGrid={isGrid} // 캔버스에 보조선 상태 전달
+          isGrid={isGrid}
           stageRef={stageRef}
           tracingImage={tracingImage}
         />
@@ -115,9 +145,9 @@ const DrawPage = () => {
         bgColor={bgColor} setBgColor={setBgColor}
         opacity={opacity} setOpacity={setOpacity}
         handleUndo={handleUndo} handleRedo={handleRedo}
-        canUndo={lines.length > 0} canRedo={redoLines.length > 0}
+        canUndo={false} canRedo={false} // Undo/Redo 임시 비활성화
         isTracing={isTracing} setIsTracing={setIsTracing}
-        isGrid={isGrid} setIsGrid={setIsGrid} // 툴바에 보조선 제어 전달
+        isGrid={isGrid} setIsGrid={setIsGrid}
         handleDownload={handleDownload}
         isFreeMode={isFreeMode}
         handleImageUpload={handleImageUpload}
@@ -126,6 +156,16 @@ const DrawPage = () => {
         handleRemoveBgImage={handleRemoveBgImage}
         handleBgColorReset={handleBgColorReset}
         handleClearAll={handleClearAll}
+        
+        // 레이어 관련 상태 및 핸들러 전달
+        layers={layers}
+        activeLayerId={activeLayerId}
+        handleAddLayer={handleAddLayer}
+        handleToggleLayerVisibility={handleToggleLayerVisibility}
+        handleDeleteLayer={handleDeleteLayer}
+        handleSelectLayer={handleSelectLayer}
+        hasAnyLines={hasAnyLines}
+        
         goHome={goHome}
       />
     </div>
