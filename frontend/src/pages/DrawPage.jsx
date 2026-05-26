@@ -15,6 +15,18 @@ const DrawPage = () => {
   const [bgImageUrl, setBgImageUrl] = useState(null); // 커스텀 배경 이미지 URL
   const [opacity, setOpacity] = useState(1.0); // 브러시 투명도 상태 추가 (기본값: 1.0)
   
+  // 캔버스 크기 제어 상태 추가
+  const [canvasWidth, setCanvasWidth] = useState(800);
+  const [canvasHeight, setCanvasHeight] = useState(600);
+
+  // 확대/축소 및 화면 이동 위치 상태
+  const [scale, setScale] = useState(1);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+
+  // 텍스트 입력 오버레이 관련 상태
+  const [isTyping, setIsTyping] = useState(false);
+  const [textInputPos, setTextInputPos] = useState(null);
+
   // 다중 레이어 상태
   const [layers, setLayers] = useState([
     { id: 1, name: '레이어 1', visible: true, lines: [] }
@@ -40,7 +52,8 @@ const DrawPage = () => {
   const stageData = STAGES.find(s => s.id === stageId);
   const isFreeMode = stageId === 'free';
   
-  const [isTracing, setIsTracing] = useState(!isFreeMode); 
+  // 밑그림 기본 비활성화: 진입 시 무조건 false
+  const [isTracing, setIsTracing] = useState(false); 
   const [tracingImage, setTracingImage] = useState(stageData?.image || null);
   const [isGrid, setIsGrid] = useState(false); // 보조선 토글 상태 추가
   
@@ -96,16 +109,52 @@ const DrawPage = () => {
     commitSnapshot(layersRef.current, activeLayerIdRef.current);
   };
 
+  // 텍스트 저장 로직
+  const handleTextSubmit = (text, pos) => {
+    setIsTyping(false);
+    
+    if (text && text.trim() !== '') {
+      const newTextItem = {
+        type: 'text',
+        text: text,
+        x: pos.x,
+        y: pos.y,
+        fontSize: strokeWidth * 5,
+        fill: color,
+        opacity: opacity
+      };
+      
+      const nextLayers = layersRef.current.map(layer => {
+        if (layer.id === activeLayerIdRef.current) {
+          return {
+            ...layer,
+            lines: [...layer.lines, newTextItem]
+          };
+        }
+        return layer;
+      });
+      
+      setLayers(nextLayers);
+      commitSnapshot(nextLayers, activeLayerIdRef.current);
+    }
+  };
+
   const handleDownload = () => {
     if (!stageRef.current) return;
     
     const stage = stageRef.current;
+
     const gridGroup = stage.findOne('#gridGroup');
     if (gridGroup) gridGroup.hide();
 
+    const tracingImageNode = stage.findOne('#tracingImage');
+    if (tracingImageNode) tracingImageNode.hide();
+
+    // 캔버스 사이즈에 맞게 정확한 이미지 추출
     const uri = stage.toDataURL({ pixelRatio: 2 }); 
 
     if (gridGroup) gridGroup.show();
+    if (tracingImageNode) tracingImageNode.show();
 
     const link = document.createElement('a');
     link.download = 'my_artwork.png';
@@ -120,7 +169,7 @@ const DrawPage = () => {
     if (!file) return;
     const imageUrl = URL.createObjectURL(file);
     setTracingImage(imageUrl);
-    setIsTracing(true); 
+    setIsTracing(false); // 새로운 밑그림 사진 업로드 시에도 기본값을 false로 유지
   };
 
   const handleBgImageUpload = (e) => {
@@ -143,6 +192,14 @@ const DrawPage = () => {
       const nextLayers = layers.map(l => ({ ...l, lines: [] }));
       setLayers(nextLayers);
       commitSnapshot(nextLayers, activeLayerId);
+      
+      // 확대 비율 및 화면 이동 위치 초기화
+      setScale(1);
+      setStagePos({ x: 0, y: 0 });
+
+      // 텍스트 관련 상태 초기화
+      setIsTyping(false);
+      setTextInputPos(null);
     }
   };
 
@@ -244,6 +301,21 @@ const DrawPage = () => {
           stageRef={stageRef}
           tracingImage={tracingImage}
           onDrawEnd={handleDrawEnd}
+          
+          scale={scale}
+          setScale={setScale}
+          stagePos={stagePos}
+          setStagePos={setStagePos}
+
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+
+          // 텍스트 상태 및 콜백 연동
+          isTyping={isTyping}
+          setIsTyping={setIsTyping}
+          textInputPos={textInputPos}
+          setTextInputPos={setTextInputPos}
+          onTextSubmit={handleTextSubmit}
         />
       </div>
       <SidePanel 
@@ -269,6 +341,12 @@ const DrawPage = () => {
         handleBgColorReset={handleBgColorReset}
         handleClearAll={handleClearAll}
         
+        // 캔버스 크기 제어 전달
+        canvasWidth={canvasWidth}
+        setCanvasWidth={setCanvasWidth}
+        canvasHeight={canvasHeight}
+        setCanvasHeight={setCanvasHeight}
+
         // 레이어 관련 상태 및 핸들러 전달
         layers={layers}
         activeLayerId={activeLayerId}

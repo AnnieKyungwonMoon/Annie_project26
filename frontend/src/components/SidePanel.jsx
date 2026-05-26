@@ -11,6 +11,10 @@ const SidePanel = ({
   handleDownload,
   isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, 
   handleBgColorReset, handleClearAll,
+
+  // 캔버스 사이즈 조절 Props
+  canvasWidth, setCanvasWidth,
+  canvasHeight, setCanvasHeight,
   
   // 레이어 관련 Props
   layers, activeLayerId, handleAddLayer, handleToggleLayerVisibility, handleDeleteLayer, handleSelectLayer,
@@ -97,14 +101,16 @@ const SidePanel = ({
       {/* 1구역: 도구 및 그리기 설정 */}
       <div style={sectionStyle}>
         <div style={labelStyle}>🖌️ 그리기 도구</div>
-        <div style={rowStyle}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <button 
             onClick={() => setTool('pen')} 
             style={{ 
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: tool === 'pen' ? '#228be6' : '#e9ecef', 
-              color: tool === 'pen' ? 'white' : '#212529' 
+              color: tool === 'pen' ? 'white' : '#212529',
+              padding: '10px 4px',
+              fontSize: '12px'
             }}
           >
             ✏️ 펜
@@ -115,15 +121,45 @@ const SidePanel = ({
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: tool === 'eraser' ? '#fa5252' : '#e9ecef',
-              color: tool === 'eraser' ? 'white' : '#212529'
+              color: tool === 'eraser' ? 'white' : '#212529',
+              padding: '10px 4px',
+              fontSize: '12px'
             }}
           >
             🧽 지우개
           </button>
+          <button 
+            onClick={() => setTool('text')} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: tool === 'text' ? '#fd7e14' : '#e9ecef',
+              color: tool === 'text' ? 'white' : '#212529',
+              padding: '10px 4px',
+              fontSize: '12px'
+            }}
+          >
+            🔤 글쓰기
+          </button>
+          <button 
+            onClick={() => setTool('hand')} 
+            style={{ 
+              ...buttonStyle, 
+              flex: 1, 
+              backgroundColor: tool === 'hand' ? '#15aabf' : '#e9ecef',
+              color: tool === 'hand' ? 'white' : '#212529',
+              padding: '10px 4px',
+              fontSize: '12px'
+            }}
+          >
+            🖐️ 이동
+          </button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
-          <span style={{ fontSize: '12px', color: '#adb5bd' }}>펜 색상</span>
+          <span style={{ fontSize: '12px', color: '#adb5bd' }}>
+            {tool === 'text' ? '글자 색상' : '펜 색상'}
+          </span>
           {tool === 'eraser' ? (
             <div style={{
               height: '180px', backgroundColor: '#343a40', borderRadius: '8px',
@@ -131,6 +167,14 @@ const SidePanel = ({
               fontSize: '14px', border: '1px dashed #495057', boxSizing: 'border-box'
             }}>
               지우개 모드 활성화됨
+            </div>
+          ) : tool === 'hand' ? (
+            <div style={{
+              height: '180px', backgroundColor: '#343a40', borderRadius: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#adb5bd',
+              fontSize: '14px', border: '1px dashed #495057', boxSizing: 'border-box'
+            }}>
+              이동(드래그) 모드 활성화됨
             </div>
           ) : (
             <div style={{ width: '100%' }}>
@@ -141,13 +185,14 @@ const SidePanel = ({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#adb5bd' }}>
-            <span>브러쉬 두께</span>
-            <span>{strokeWidth}px</span>
+            <span>{tool === 'text' ? '글자 크기' : '브러쉬 두께'}</span>
+            <span>{tool === 'text' ? `${strokeWidth * 5}px` : `${strokeWidth}px`}</span>
           </div>
           <input 
             id="thickness" type="range" min="1" max="50" value={strokeWidth} 
             onChange={(e) => setStrokeWidth(parseInt(e.target.value))} 
             style={{ width: '100%', cursor: 'pointer' }} 
+            disabled={tool === 'hand'}
           />
         </div>
 
@@ -160,11 +205,72 @@ const SidePanel = ({
             id="opacity" type="range" min="1" max="100" value={Math.round(opacity * 100)} 
             onChange={(e) => setOpacity(parseFloat(e.target.value) / 100)} 
             style={{ width: '100%', cursor: 'pointer' }} 
+            disabled={tool === 'hand'}
           />
         </div>
       </div>
 
-      {/* 2구역: 캔버스 배경 설정 */}
+      {/* 2구역: 캔버스 크기 제어 */}
+      <div style={sectionStyle}>
+        <div style={labelStyle}>📐 캔버스 크기</div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '11px', color: '#adb5bd' }}>가로 (px)</span>
+            <input 
+              type="number" 
+              value={canvasWidth} 
+              onChange={(e) => setCanvasWidth(Math.max(100, parseInt(e.target.value) || 0))} 
+              style={{
+                width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #495057',
+                backgroundColor: '#343a40', color: 'white', fontSize: '13px', boxSizing: 'border-box'
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <span style={{ fontSize: '11px', color: '#adb5bd' }}>세로 (px)</span>
+            <input 
+              type="number" 
+              value={canvasHeight} 
+              onChange={(e) => setCanvasHeight(Math.max(100, parseInt(e.target.value) || 0))} 
+              style={{
+                width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #495057',
+                backgroundColor: '#343a40', color: 'white', fontSize: '13px', boxSizing: 'border-box'
+              }}
+            />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+          <button 
+            onClick={() => { setCanvasWidth(800); setCanvasHeight(600); }} 
+            style={{ 
+              ...buttonStyle, flex: 1, padding: '6px 8px', fontSize: '11px', 
+              backgroundColor: '#495057', color: 'white', gap: 0
+            }}
+          >
+            800x600
+          </button>
+          <button 
+            onClick={() => { setCanvasWidth(1080); setCanvasHeight(1080); }} 
+            style={{ 
+              ...buttonStyle, flex: 1, padding: '6px 8px', fontSize: '11px', 
+              backgroundColor: '#495057', color: 'white', gap: 0
+            }}
+          >
+            1080x1080
+          </button>
+          <button 
+            onClick={() => { setCanvasWidth(1920); setCanvasHeight(1080); }} 
+            style={{ 
+              ...buttonStyle, flex: 1, padding: '6px 8px', fontSize: '11px', 
+              backgroundColor: '#495057', color: 'white', gap: 0
+            }}
+          >
+            1920x1080
+          </button>
+        </div>
+      </div>
+
+      {/* 3구역: 캔버스 배경 설정 */}
       <div style={sectionStyle}>
         <div style={labelStyle}>🎨 캔버스 배경</div>
         
@@ -208,7 +314,7 @@ const SidePanel = ({
         </div>
       </div>
 
-      {/* 3구역: 밑그림 및 보조선 */}
+      {/* 4구역: 밑그림 및 보조선 */}
       <div style={sectionStyle}>
         <div style={labelStyle}>📏 가이드 및 트레이싱</div>
         
@@ -253,7 +359,7 @@ const SidePanel = ({
         </div>
       </div>
 
-      {/* 4구역: 레이어 패널 (역순 렌더링 및 올리기/내리기/이름변경 추가) */}
+      {/* 5구역: 레이어 패널 */}
       <div style={sectionStyle}>
         <div style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>LAYERS (레이어)</span>
@@ -415,7 +521,7 @@ const SidePanel = ({
         </div>
       </div>
 
-      {/* 5구역: 편집 및 초기화 */}
+      {/* 6구역: 편집 및 초기화 */}
       <div style={{ ...sectionStyle, borderBottom: 'none' }}>
         <div style={labelStyle}>⚙️ 편집 제어</div>
         <div style={rowStyle}>
