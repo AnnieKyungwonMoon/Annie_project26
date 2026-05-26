@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Stage, Layer, Line, Rect, Image as KonvaImage, Group, Text } from 'react-konva';
+import { Stage, Layer, Line, Rect, Image, Group } from 'react-konva';
 
 const CanvasBoard = ({ 
   strokeWidth, tool, color, bgColor, bgImageUrl, opacity, 
@@ -9,21 +9,13 @@ const CanvasBoard = ({
   scale, setScale, stagePos, setStagePos,
   
   // 캔버스 사이즈 조절 Props
-  canvasWidth, canvasHeight,
-
-  // 텍스트 관련 Props
-  isTyping, setIsTyping,
-  textInputPos, setTextInputPos,
-  onTextSubmit
+  canvasWidth, canvasHeight
 }) => {
   const isDrawing = useRef(false);
   const containerRef = useRef(null);
-  const isPanning = useRef(false);
-  const panStart = useRef({ x: 0, y: 0 });
 
   const [bgImageObj, setBgImageObj] = useState(null);
   const [tracingImageObj, setTracingImageObj] = useState(null);
-  const [localInputValue, setLocalInputValue] = useState('');
 
   // 배경 이미지 로드
   useEffect(() => {
@@ -38,7 +30,7 @@ const CanvasBoard = ({
     }
   }, [bgImageUrl]);
 
-  // 밑그림 이미지 로드 (스테이지 내에 렌더링하기 위해 이미지 객체 생성)
+  // 밑그림 이미지 로드
   useEffect(() => {
     if (tracingImage) {
       const img = new window.Image();
@@ -63,76 +55,40 @@ const CanvasBoard = ({
     }
   }
 
-  // 마우스 휠 확대/축소 (CSS Transform 기반 줌 연산)
+  // 마우스 휠 확대/축소 (Stage scaleX, scaleY 기반 줌 연산)
   const handleWheel = (e) => {
-    e.preventDefault();
+    e.evt.preventDefault();
+    const stage = stageRef.current || e.target.getStage();
+    const oldScale = stage.scaleX();
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
     const scaleBy = 1.08;
-    const oldScale = scale;
-    const newScale = e.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
     const clampedScale = Math.max(0.1, Math.min(10, newScale));
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - containerRect.left;
-    const mouseY = e.clientY - containerRect.top;
-
-    const dx = mouseX - stagePos.x;
-    const dy = mouseY - stagePos.y;
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
+    };
 
     const newPos = {
-      x: mouseX - dx * (clampedScale / oldScale),
-      y: mouseY - dy * (clampedScale / oldScale)
+      x: pointer.x - mousePointTo.x * clampedScale,
+      y: pointer.y - mousePointTo.y * clampedScale,
     };
 
     setScale(clampedScale);
     setStagePos(newPos);
   };
 
-  // 손바닥 툴 화면 이동(Pan) - 마우스 제어
-  const handlePointerDown = (e) => {
-    if (tool !== 'hand') return;
-    isPanning.current = true;
-    panStart.current = { x: e.clientX - stagePos.x, y: e.clientY - stagePos.y };
-  };
-
-  const handlePointerMove = (e) => {
-    if (!isPanning.current) return;
-    setStagePos({
-      x: e.clientX - panStart.current.x,
-      y: e.clientY - panStart.current.y
-    });
-  };
-
-  const handlePointerUp = () => {
-    isPanning.current = false;
-  };
-
-  // 손바닥 툴 화면 이동(Pan) - 모바일 터치 제어
-  const handleTouchStart = (e) => {
-    if (tool !== 'hand') return;
-    isPanning.current = true;
-    const touch = e.touches[0];
-    panStart.current = { x: touch.clientX - stagePos.x, y: touch.clientY - stagePos.y };
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isPanning.current) return;
-    const touch = e.touches[0];
-    setStagePos({
-      x: touch.clientX - panStart.current.x,
-      y: touch.clientY - panStart.current.y
-    });
-  };
-
-  const handleTouchEnd = () => {
-    isPanning.current = false;
-  };
-
-  // 텍스트 저장 트리거 헬퍼
-  const handleTextSubmitInternal = () => {
-    if (isTyping && textInputPos) {
-      onTextSubmit(localInputValue, textInputPos);
-      setIsTyping(false);
-      setLocalInputValue('');
+  // 손바닥 툴 화면 이동(Pan) 드래그 종료 연동
+  const handleDragEnd = (e) => {
+    if (e.target === stageRef.current || e.target === e.target.getStage()) {
+      setStagePos({
+        x: e.target.x(),
+        y: e.target.y()
+      });
     }
   };
 
@@ -140,27 +96,22 @@ const CanvasBoard = ({
     if (tool === 'hand') return; // 화면 이동 모드일 경우 드로잉 무시
     
     const stage = e.target.getStage();
-    // CSS Transform 환경에서는 stage.getPointerPosition()이 캔버스 로컬 내부 좌표[0 ~ canvasWidth/Height]를 자동으로 매핑해 줍니다.
     const pos = stage.getPointerPosition();
     if (!pos) return;
-    
-    if (tool === 'text') {
-      if (isTyping) {
-        handleTextSubmitInternal();
-      }
-      setIsTyping(true);
-      setTextInputPos(pos);
-      setLocalInputValue('');
-      return;
-    }
 
     isDrawing.current = true;
+    
+    // 드로잉 좌표: 줌/이동이 반영된 내부 상대 좌표 계산
+    const relativePos = {
+      x: (pos.x - stage.x()) / stage.scaleX(),
+      y: (pos.y - stage.y()) / stage.scaleY()
+    };
     
     setLayers(layers.map(layer => {
       if (layer.id === activeLayerId) {
         return {
           ...layer,
-          lines: [...layer.lines, { type: 'line', points: [pos.x, pos.y], strokeWidth: strokeWidth, tool: tool, color: color, opacity: opacity }]
+          lines: [...layer.lines, { points: [relativePos.x, relativePos.y], strokeWidth: strokeWidth, tool: tool, color: color, opacity: opacity }]
         };
       }
       return layer;
@@ -168,18 +119,23 @@ const CanvasBoard = ({
   };
 
   const handleMouseMove = (e) => {
-    if (!isDrawing.current || tool === 'hand' || tool === 'text') return;
+    if (!isDrawing.current || tool === 'hand') return;
     
     const stage = e.target.getStage();
-    const point = stage.getPointerPosition();
-    if (!point) return;
+    const pos = stage.getPointerPosition();
+    if (!pos) return;
+
+    // 드로잉 좌표: 줌/이동이 반영된 내부 상대 좌표 계산
+    const relativePos = {
+      x: (pos.x - stage.x()) / stage.scaleX(),
+      y: (pos.y - stage.y()) / stage.scaleY()
+    };
 
     setLayers(layers.map(layer => {
       if (layer.id === activeLayerId) {
         if (layer.lines.length === 0) return layer;
         const lastLine = { ...layer.lines[layer.lines.length - 1] };
-        if (lastLine.type !== 'line') return layer;
-        lastLine.points = lastLine.points.concat([point.x, point.y]);
+        lastLine.points = lastLine.points.concat([relativePos.x, relativePos.y]);
         const newLines = [...layer.lines];
         newLines[newLines.length - 1] = lastLine;
         return { ...layer, lines: newLines };
@@ -197,34 +153,25 @@ const CanvasBoard = ({
 
   return (
     <div 
-      ref={containerRef}
-      onWheel={handleWheel}
-      onMouseDown={handlePointerDown}
-      onMouseMove={handlePointerMove}
-      onMouseUp={handlePointerUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       style={{ 
         backgroundColor: '#e9ecef', 
         width: '100%', 
         height: '100%', 
-        position: 'relative', 
-        overflow: 'hidden',
-        cursor: tool === 'hand' ? (isPanning.current ? 'grabbing' : 'grab') : 'default'
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        overflow: 'hidden' 
       }}
     >
-      {/* 줌 및 화면 이동이 마운트되는 GPU 가속 CSS 컨테이너 */}
+      {/* 최상위 부모 <div> */}
       <div 
+        ref={containerRef}
         style={{ 
-          position: 'absolute',
-          transform: `translate(${stagePos.x}px, ${stagePos.y}px) scale(${scale})`,
-          transformOrigin: '0 0',
-          width: `${canvasWidth}px`,
+          position: 'relative', 
+          width: `${canvasWidth}px`, 
           height: `${canvasHeight}px`,
           boxShadow: '0 4px 25px rgba(0,0,0,0.15)',
           backgroundColor: '#ffffff',
-          zIndex: 1
         }}
       >
         <Stage 
@@ -237,6 +184,13 @@ const CanvasBoard = ({
           onTouchStart={handleMouseDown} 
           onTouchMove={handleMouseMove} 
           onTouchEnd={handleMouseUp}
+          onWheel={handleWheel}
+          onDragEnd={handleDragEnd}
+          draggable={tool === 'hand'}
+          scaleX={scale}
+          scaleY={scale}
+          x={stagePos.x}
+          y={stagePos.y}
         >
           {/* 최하단 전용 Layer: 배경색, 배경 사진, 밑그림, 보조선 */}
           <Layer>
@@ -245,12 +199,12 @@ const CanvasBoard = ({
             
             {/* 2. 중하단: 커스텀 배경 이미지 */}
             {!isTracing && bgImageObj && (
-              <KonvaImage image={bgImageObj} width={canvasWidth} height={canvasHeight} />
+              <Image image={bgImageObj} width={canvasWidth} height={canvasHeight} />
             )}
 
             {/* 3. 중단: 밑그림 (스테이지 내부에 위치시켜 줌/팬에 완전 동기화) */}
             {isTracing && tracingImageObj && (
-              <KonvaImage 
+              <Image 
                 id="tracingImage" 
                 image={tracingImageObj} 
                 width={canvasWidth} 
@@ -267,70 +221,17 @@ const CanvasBoard = ({
           {/* 그 위로 사용자 layers 순회하며 각각의 Layer 컴포넌트로 분리하여 렌더링 */}
           {layers.map((layer) => (
             <Layer key={layer.id} visible={layer.visible}>
-              {layer.lines.map((item, i) => {
-                if (item.type === 'text') {
-                  return (
-                    <Text
-                      key={i}
-                      text={item.text}
-                      x={item.x}
-                      y={item.y}
-                      fontSize={item.fontSize}
-                      fill={item.fill}
-                      opacity={item.opacity !== undefined ? item.opacity : 1}
-                      lineHeight={1.2}
-                    />
-                  );
-                } else {
-                  return (
-                    <Line
-                      key={i} points={item.points} stroke={item.color} strokeWidth={item.strokeWidth} 
-                      opacity={item.opacity !== undefined ? item.opacity : 1}
-                      tension={0.5} lineCap="round" lineJoin="round"
-                      globalCompositeOperation={item.tool === 'eraser' ? 'destination-out' : 'source-over'}
-                    />
-                  );
-                }
-              })}
+              {layer.lines.map((item, i) => (
+                <Line
+                  key={i} points={item.points} stroke={item.color} strokeWidth={item.strokeWidth} 
+                  opacity={item.opacity !== undefined ? item.opacity : 1}
+                  tension={0.5} lineCap="round" lineJoin="round"
+                  globalCompositeOperation={item.tool === 'eraser' ? 'destination-out' : 'source-over'}
+                />
+              ))}
             </Layer>
           ))}
         </Stage>
-
-        {/* 텍스트 입력용 HTML textarea 오버레이 (트랜스폼 컨테이너 내부에 있으므로 CSS 줌/이동 자동 동기화) */}
-        {isTyping && textInputPos && (
-          <textarea
-            autoFocus
-            value={localInputValue}
-            onChange={(e) => setLocalInputValue(e.target.value)}
-            onBlur={handleTextSubmitInternal}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleTextSubmitInternal();
-              }
-            }}
-            style={{
-              position: 'absolute',
-              left: `${textInputPos.x}px`,
-              top: `${textInputPos.y}px`,
-              fontSize: `${strokeWidth * 5}px`,
-              color: color,
-              background: 'transparent',
-              border: '1px dashed #228be6',
-              outline: 'none',
-              resize: 'both',
-              overflow: 'hidden',
-              whiteSpace: 'pre',
-              zIndex: 10,
-              padding: '4px',
-              margin: 0,
-              lineHeight: 1.2,
-              caretColor: color,
-              fontFamily: 'sans-serif',
-              transformOrigin: 'top left',
-            }}
-          />
-        )}
       </div>
     </div>
   );

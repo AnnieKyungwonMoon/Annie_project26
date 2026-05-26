@@ -129,19 +129,6 @@ const SidePanel = ({
             🧽 지우개
           </button>
           <button 
-            onClick={() => setTool('text')} 
-            style={{ 
-              ...buttonStyle, 
-              flex: 1, 
-              backgroundColor: tool === 'text' ? '#fd7e14' : '#e9ecef',
-              color: tool === 'text' ? 'white' : '#212529',
-              padding: '10px 4px',
-              fontSize: '12px'
-            }}
-          >
-            🔤 글쓰기
-          </button>
-          <button 
             onClick={() => setTool('hand')} 
             style={{ 
               ...buttonStyle, 
@@ -158,7 +145,7 @@ const SidePanel = ({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
           <span style={{ fontSize: '12px', color: '#adb5bd' }}>
-            {tool === 'text' ? '글자 색상' : '펜 색상'}
+            펜 색상
           </span>
           {tool === 'eraser' ? (
             <div style={{
@@ -185,8 +172,8 @@ const SidePanel = ({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#adb5bd' }}>
-            <span>{tool === 'text' ? '글자 크기' : '브러쉬 두께'}</span>
-            <span>{tool === 'text' ? `${strokeWidth * 5}px` : `${strokeWidth}px`}</span>
+            <span>브러쉬 두께</span>
+            <span>{strokeWidth}px</span>
           </div>
           <input 
             id="thickness" type="range" min="1" max="50" value={strokeWidth} 

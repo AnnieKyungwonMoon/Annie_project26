@@ -13,19 +13,15 @@ const DrawPage = () => {
   const [color, setColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');
   const [bgImageUrl, setBgImageUrl] = useState(null); // 커스텀 배경 이미지 URL
-  const [opacity, setOpacity] = useState(1.0); // 브러시 투명도 상태 추가 (기본값: 1.0)
+  const [opacity, setOpacity] = useState(1.0); // 브러시 투명도 상태 추가
   
-  // 캔버스 크기 제어 상태 추가
+  // 캔버스 크기 제어 상태
   const [canvasWidth, setCanvasWidth] = useState(800);
   const [canvasHeight, setCanvasHeight] = useState(600);
 
   // 확대/축소 및 화면 이동 위치 상태
   const [scale, setScale] = useState(1);
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
-
-  // 텍스트 입력 오버레이 관련 상태
-  const [isTyping, setIsTyping] = useState(false);
-  const [textInputPos, setTextInputPos] = useState(null);
 
   // 다중 레이어 상태
   const [layers, setLayers] = useState([
@@ -109,36 +105,6 @@ const DrawPage = () => {
     commitSnapshot(layersRef.current, activeLayerIdRef.current);
   };
 
-  // 텍스트 저장 로직
-  const handleTextSubmit = (text, pos) => {
-    setIsTyping(false);
-    
-    if (text && text.trim() !== '') {
-      const newTextItem = {
-        type: 'text',
-        text: text,
-        x: pos.x,
-        y: pos.y,
-        fontSize: strokeWidth * 5,
-        fill: color,
-        opacity: opacity
-      };
-      
-      const nextLayers = layersRef.current.map(layer => {
-        if (layer.id === activeLayerIdRef.current) {
-          return {
-            ...layer,
-            lines: [...layer.lines, newTextItem]
-          };
-        }
-        return layer;
-      });
-      
-      setLayers(nextLayers);
-      commitSnapshot(nextLayers, activeLayerIdRef.current);
-    }
-  };
-
   const handleDownload = () => {
     if (!stageRef.current) return;
     
@@ -196,10 +162,6 @@ const DrawPage = () => {
       // 확대 비율 및 화면 이동 위치 초기화
       setScale(1);
       setStagePos({ x: 0, y: 0 });
-
-      // 텍스트 관련 상태 초기화
-      setIsTyping(false);
-      setTextInputPos(null);
     }
   };
 
@@ -309,13 +271,6 @@ const DrawPage = () => {
 
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}
-
-          // 텍스트 상태 및 콜백 연동
-          isTyping={isTyping}
-          setIsTyping={setIsTyping}
-          textInputPos={textInputPos}
-          setTextInputPos={setTextInputPos}
-          onTextSubmit={handleTextSubmit}
         />
       </div>
       <SidePanel 
