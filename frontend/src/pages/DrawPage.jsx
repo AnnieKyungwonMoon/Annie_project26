@@ -106,16 +106,48 @@ const DrawPage = () => {
       alert("최소 하나의 레이어는 존재해야 합니다.");
       return;
     }
-    const newLayers = layers.filter(l => l.id !== id);
-    setLayers(newLayers);
-    if (activeLayerId === id) {
-      setActiveLayerId(newLayers[newLayers.length - 1].id);
+    if (window.confirm("선택하신 레이어를 삭제하시겠습니까?")) {
+      const newLayers = layers.filter(l => l.id !== id);
+      setLayers(newLayers);
+      if (activeLayerId === id) {
+        setActiveLayerId(newLayers[newLayers.length - 1].id);
+      }
     }
   };
 
   // 레이어 선택 핸들러
   const handleSelectLayer = (id) => {
     setActiveLayerId(id);
+  };
+
+  // 레이어 이름 변경 핸들러
+  const handleRenameLayer = (id) => {
+    const layer = layers.find(l => l.id === id);
+    if (!layer) return;
+    const newName = window.prompt("새로운 레이어 이름을 입력하세요:", layer.name);
+    if (newName && newName.trim() !== "") {
+      setLayers(layers.map(l => l.id === id ? { ...l, name: newName.trim() } : l));
+    }
+  };
+
+  // 레이어 위로 이동 (배열에서 index -> index + 1)
+  const handleMoveLayerUp = (index) => {
+    if (index >= layers.length - 1) return; // 이미 맨 위
+    const newLayers = [...layers];
+    const temp = newLayers[index];
+    newLayers[index] = newLayers[index + 1];
+    newLayers[index + 1] = temp;
+    setLayers(newLayers);
+  };
+
+  // 레이어 아래로 이동 (배열에서 index -> index - 1)
+  const handleMoveLayerDown = (index) => {
+    if (index <= 0) return; // 이미 맨 아래
+    const newLayers = [...layers];
+    const temp = newLayers[index];
+    newLayers[index] = newLayers[index - 1];
+    newLayers[index - 1] = temp;
+    setLayers(newLayers);
   };
 
   const goHome = () => {
@@ -164,6 +196,9 @@ const DrawPage = () => {
         handleToggleLayerVisibility={handleToggleLayerVisibility}
         handleDeleteLayer={handleDeleteLayer}
         handleSelectLayer={handleSelectLayer}
+        handleRenameLayer={handleRenameLayer}
+        handleMoveLayerUp={handleMoveLayerUp}
+        handleMoveLayerDown={handleMoveLayerDown}
         hasAnyLines={hasAnyLines}
         
         goHome={goHome}

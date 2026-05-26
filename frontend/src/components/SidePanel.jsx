@@ -12,8 +12,9 @@ const SidePanel = ({
   isFreeMode, handleImageUpload, handleBgImageUpload, bgImageUrl, handleRemoveBgImage, 
   handleBgColorReset, handleClearAll,
   
-  // 레이어 관련 Props 추가
-  layers, activeLayerId, handleAddLayer, handleToggleLayerVisibility, handleDeleteLayer, handleSelectLayer, hasAnyLines,
+  // 레이어 관련 Props
+  layers, activeLayerId, handleAddLayer, handleToggleLayerVisibility, handleDeleteLayer, handleSelectLayer,
+  handleRenameLayer, handleMoveLayerUp, handleMoveLayerDown, hasAnyLines,
   
   goHome
 }) => {
@@ -252,7 +253,7 @@ const SidePanel = ({
         </div>
       </div>
 
-      {/* 4구역: 레이어 패널 추가 */}
+      {/* 4구역: 레이어 패널 (역순 렌더링 및 올리기/내리기/이름변경 추가) */}
       <div style={sectionStyle}>
         <div style={{ ...labelStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>LAYERS (레이어)</span>
@@ -271,12 +272,13 @@ const SidePanel = ({
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px',
-          maxHeight: '180px',
+          gap: '8px',
+          maxHeight: '260px',
           overflowY: 'auto',
           paddingRight: '2px'
         }}>
-          {layers.map((layer) => {
+          {[...layers].reverse().map((layer) => {
+            const originalIndex = layers.findIndex(l => l.id === layer.id);
             const isActive = layer.id === activeLayerId;
             return (
               <div 
@@ -284,8 +286,8 @@ const SidePanel = ({
                 onClick={() => handleSelectLayer(layer.id)}
                 style={{
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  flexDirection: 'column',
+                  gap: '6px',
                   padding: '8px 10px',
                   borderRadius: '6px',
                   cursor: 'pointer',
@@ -296,41 +298,117 @@ const SidePanel = ({
                   userSelect: 'none'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleLayerVisibility(layer.id);
+                      }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                        fontSize: '14px', opacity: layer.visible ? 1 : 0.4,
+                        color: isActive ? 'white' : '#adb5bd'
+                      }}
+                      title={layer.visible ? "레이어 숨기기" : "레이어 보이기"}
+                    >
+                      {layer.visible ? '👁️' : '👁️‍🗨️'}
+                    </button>
+                    <span style={{ 
+                      fontSize: '13px', 
+                      fontWeight: isActive ? 'bold' : 'normal',
+                      textOverflow: 'ellipsis',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '120px'
+                    }}>
+                      {layer.name}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRenameLayer(layer.id);
+                      }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+                        fontSize: '12px', color: isActive ? '#e9ecef' : '#adb5bd'
+                      }}
+                      title="이름 변경"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLayer(layer.id);
+                      }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+                        fontSize: '12px', color: isActive ? '#ffc9c9' : '#fa5252',
+                        opacity: layers.length > 1 ? 1 : 0.3
+                      }}
+                      disabled={layers.length <= 1}
+                      title="레이어 삭제"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                {/* 순서 제어 (위/아래 이동) 영역 */}
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '6px', 
+                  marginTop: '2px', 
+                  borderTop: isActive ? '1px solid #4dadf7' : '1px solid #343a40', 
+                  paddingTop: '4px' 
+                }}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleToggleLayerVisibility(layer.id);
+                      handleMoveLayerUp(originalIndex);
                     }}
+                    disabled={originalIndex === layers.length - 1}
                     style={{
-                      background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                      fontSize: '14px', opacity: layer.visible ? 1 : 0.4,
-                      color: isActive ? 'white' : '#adb5bd'
+                      flex: 1,
+                      background: isActive ? '#1864ab' : '#343a40',
+                      border: 'none',
+                      borderRadius: '3px',
+                      color: 'white',
+                      fontSize: '10px',
+                      padding: '2px 0',
+                      cursor: originalIndex === layers.length - 1 ? 'not-allowed' : 'pointer',
+                      opacity: originalIndex === layers.length - 1 ? 0.3 : 1
                     }}
-                    title={layer.visible ? "레이어 숨기기" : "레이어 보이기"}
+                    title="위로 올리기 (드로잉을 가장 위로)"
                   >
-                    {layer.visible ? '👁️' : '👁️‍🗨️'}
+                    ⬆️ 올리기
                   </button>
-                  <span style={{ fontSize: '13px', fontWeight: isActive ? 'bold' : 'normal' }}>
-                    {layer.name}
-                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveLayerDown(originalIndex);
+                    }}
+                    disabled={originalIndex === 0}
+                    style={{
+                      flex: 1,
+                      background: isActive ? '#1864ab' : '#343a40',
+                      border: 'none',
+                      borderRadius: '3px',
+                      color: 'white',
+                      fontSize: '10px',
+                      padding: '2px 0',
+                      cursor: originalIndex === 0 ? 'not-allowed' : 'pointer',
+                      opacity: originalIndex === 0 ? 0.3 : 1
+                    }}
+                    title="아래로 내리기 (드로잉을 가장 아래로)"
+                  >
+                    ⬇️ 내리기
+                  </button>
                 </div>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteLayer(layer.id);
-                  }}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                    fontSize: '13px', color: isActive ? '#ffc9c9' : '#fa5252',
-                    opacity: layers.length > 1 ? 1 : 0.3
-                  }}
-                  disabled={layers.length <= 1}
-                  title="레이어 삭제"
-                >
-                  🗑️
-                </button>
               </div>
             );
           })}
