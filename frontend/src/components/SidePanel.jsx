@@ -420,30 +420,30 @@ const SidePanel = ({
         <div style={labelStyle}>⚙️ 편집 제어</div>
         <div style={rowStyle}>
           <button 
-            disabled 
+            onClick={handleUndo} 
+            disabled={!canUndo} 
             style={{ 
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: '#495057', 
               color: 'white',
-              cursor: 'not-allowed', 
-              opacity: 0.3 
+              cursor: canUndo ? 'pointer' : 'not-allowed', 
+              opacity: canUndo ? 1 : 0.3 
             }}
-            title="레이어 모드에서 임시 비활성화됨"
           >
             ↩️ 실행취소
           </button>
           <button 
-            disabled 
+            onClick={handleRedo} 
+            disabled={!canRedo} 
             style={{ 
               ...buttonStyle, 
               flex: 1, 
               backgroundColor: '#495057', 
               color: 'white',
-              cursor: 'not-allowed', 
-              opacity: 0.3 
+              cursor: canRedo ? 'pointer' : 'not-allowed', 
+              opacity: canRedo ? 1 : 0.3 
             }}
-            title="레이어 모드에서 임시 비활성화됨"
           >
             ↪️ 다시실행
           </button>

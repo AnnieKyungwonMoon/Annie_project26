@@ -4,7 +4,8 @@ import { Stage, Layer, Line, Rect, Image as KonvaImage, Group } from 'react-konv
 const CanvasBoard = ({ 
   strokeWidth, tool, color, bgColor, bgImageUrl, opacity, 
   layers, setLayers, activeLayerId, 
-  isTracing, isGrid, stageRef, tracingImage 
+  isTracing, isGrid, stageRef, tracingImage,
+  onDrawEnd
 }) => {
   const width = window.innerWidth - 300;
   const height = window.innerHeight;
@@ -71,7 +72,10 @@ const CanvasBoard = ({
   };
 
   const handleMouseUp = () => { 
-    isDrawing.current = false; 
+    if (isDrawing.current) {
+      isDrawing.current = false; 
+      if (onDrawEnd) onDrawEnd();
+    }
   };
 
   return (
