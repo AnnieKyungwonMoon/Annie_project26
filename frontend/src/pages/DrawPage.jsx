@@ -55,19 +55,27 @@ const DrawPage = () => {
   
   const stageRef = useRef(null);
 
+  const MAX_HISTORY = 20;
+
   // 스냅샷 기록용 공통 함수
   const commitSnapshot = (newLayers, currentActiveId) => {
     setHistoryState(prev => {
       const nextHistory = prev.history.slice(0, prev.step + 1);
+      let newHistory = [
+        ...nextHistory,
+        {
+          layers: structuredClone(newLayers),
+          activeLayerId: currentActiveId
+        }
+      ];
+
+      if (newHistory.length > MAX_HISTORY) {
+        newHistory = newHistory.slice(1);
+      }
+
       return {
-        history: [
-          ...nextHistory,
-          {
-            layers: structuredClone(newLayers),
-            activeLayerId: currentActiveId
-          }
-        ],
-        step: nextHistory.length
+        history: newHistory,
+        step: newHistory.length - 1
       };
     });
   };
