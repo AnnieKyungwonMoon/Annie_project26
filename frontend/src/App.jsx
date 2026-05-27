@@ -9,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/draw/:stageId" element={<DrawPage />} />
+        <Route path="/draw/:stageId/:lectureId" element={<DrawPage />} />
       </Routes>
     </BrowserRouter>
   );

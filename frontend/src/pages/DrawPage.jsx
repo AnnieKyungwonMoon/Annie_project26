@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import CanvasBoard from '../components/CanvasBoard';
 import SidePanel from '../components/SidePanel';
-import { STAGES } from './Home';
+import { curriculumData } from '../data/curriculumData';
 
 const DrawPage = () => {
-  const { stageId } = useParams();
+  const { stageId, lectureId } = useParams();
   const navigate = useNavigate();
   
   const [strokeWidth, setStrokeWidth] = useState(5);
@@ -45,15 +45,50 @@ const DrawPage = () => {
   const activeLayerIdRef = useRef(activeLayerId);
   activeLayerIdRef.current = activeLayerId;
 
-  const stageData = STAGES.find(s => s.id === stageId);
-  const isFreeMode = stageId === 'free';
+  // 강의 정보 추출
+  let currentLecture = null;
+  if (stageId && lectureId) {
+    const stageObj = curriculumData.find(s => s.stageId === parseInt(stageId));
+    if (stageObj) {
+      currentLecture = stageObj.lectures.find(l => l.id === parseInt(lectureId));
+    }
+  }
+
+  const lectureTitle = currentLecture ? currentLecture.title : "자유 그리기";
+  const lectureDescription = currentLecture ? currentLecture.description : "자유로운 주제로 그림을 그리거나, 원하는 이미지를 불러와 밑그림 삼아 트레이싱해보세요.";
+  const isFreeMode = stageId === 'free' || !lectureId;
   
   // 밑그림 기본 비활성화: 진입 시 무조건 false
   const [isTracing, setIsTracing] = useState(false); 
-  const [tracingImage, setTracingImage] = useState(stageData?.image || null);
+  const [tracingImage, setTracingImage] = useState(null);
   const [isGrid, setIsGrid] = useState(false); // 보조선 토글 상태 추가
   
   const stageRef = useRef(null);
+
+  // 파라미터(강의) 변경 시 초기화 Effect
+  useEffect(() => {
+    const initialLayers = [{ id: 1, name: '레이어 1', visible: true, lines: [] }];
+    setLayers(initialLayers);
+    setActiveLayerId(1);
+    
+    setHistoryState({
+      history: [{
+        layers: initialLayers,
+        activeLayerId: 1
+      }],
+      step: 0
+    });
+
+    setScale(1);
+    setStagePos({ x: 0, y: 0 });
+    setIsTracing(false); // 새로운 강의 진입 시 Tracing 비활성화 (false)
+
+    if (currentLecture) {
+      setTracingImage(currentLecture.tracingImg);
+    } else {
+      setTracingImage(null);
+    }
+  }, [stageId, lectureId]);
 
   const MAX_HISTORY = 20;
 
@@ -282,6 +317,8 @@ const DrawPage = () => {
         />
       </div>
       <SidePanel 
+        lectureTitle={lectureTitle}
+        lectureDescription={lectureDescription}
         strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth} 
         tool={tool} setTool={setTool} 
         color={color} setColor={setColor}

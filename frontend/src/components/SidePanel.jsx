@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { HexColorPicker } from 'react-colorful';
 
 const SidePanel = ({ 
+  lectureTitle,
+  lectureDescription,
   strokeWidth, setStrokeWidth, tool, setTool, color, setColor,
   bgColor, setBgColor,
   opacity, setOpacity,
@@ -86,6 +88,27 @@ const SidePanel = ({
       borderLeft: '1px solid #343a40',
       overflowY: 'auto'
     }}>
+      {/* 강의 정보 박스 */}
+      <div style={{
+        backgroundColor: '#1c7ed6',
+        borderRadius: '8px',
+        padding: '12px 14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      }}>
+        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#d0ebff', letterSpacing: '0.5px' }}>
+          📖 현재 강의 미션
+        </div>
+        <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', lineHeight: '1.3' }}>
+          {lectureTitle}
+        </div>
+        <div style={{ fontSize: '12px', color: '#e7f5ff', lineHeight: '1.4' }}>
+          {lectureDescription}
+        </div>
+      </div>
+
       {/* 상단 네비게이션 & 저장 */}
       <div style={sectionStyle}>
         <div style={rowStyle}>
