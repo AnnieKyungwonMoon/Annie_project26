@@ -1,16 +1,64 @@
-# React + Vite
+# 포트폴리오: 선과 형태의 발견 (Discovery of Line & Shape)
+## 🎨 초경량 디지털 미술 교육 플랫폼 (Lightweight Digital Drawing Platform for Art Education)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+### 1. 프로젝트 개요 (Project Overview)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+* **프로젝트명**: 선과 형태의 발견 (Discovery of Line & Shape)
+* **개발 목적**: 브루노 무나리(Bruno Munari)의 미술 교육 철학에 기반하여, 필압이나 화려한 질감 기교에 의존하지 않고 사물의 **'형태의 본질(구조)'**, **'색의 대비'**, **'명확한 선'**에 집중할 수 있는 3단계 30강 커리큘럼 제공용 웹 애플리케이션 구축.
+* **핵심 타겟**: 저사양 기기(구형 태블릿, 모바일 등)나 불안정한 오프라인 교실 네트워크 상황에서도 끊김 없이 2D 캔버스 드로잉 실습을 원활히 수행하고 싶은 디지털 드로잉 학습자 및 미술 교육 기관.
+* **개발 기간**: 2026년 5월 ~ 6월
+* **기술 스택**:
+  - **Core**: React 18, Vite
+  - **Canvas Engine**: React-Konva, HTML5 Canvas API
+  - **Routing**: React Router DOM (다중 페이지 및 세부 강의 라우팅 구현)
+  - **State Management**: Lifting State Up (상태 끌어올리기) 패턴
+  - **Color Picker**: react-colorful (HexColorPicker)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. 핵심 UI/UX 기획 전략 (UX Strategy)
 
-## Expanding the ESLint configuration
+#### 2.1 자유 그리기 모드 (Sandbox) 최우선 배치
+* **기획 의도**: 학습자가 서비스에 처음 진입하여 브러시 조절, 지우개, 확대/축소 등 툴의 기능과 캔버스 인터페이스에 충분히 익숙해질 수 있도록 Sandbox 성격의 **자유 그리기 모드**를 대시보드 최상단에 대형 카드 배너 형태로 배치했습니다.
+* **효과**: 신규 툴 적응에 대한 심리적 장벽을 낮추어 본격적인 커리큘럼 진입 전 이탈을 효과적으로 방지합니다.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+#### 2.2 선택적 밑그림 가이드 (isTracing) 활성화 전략
+* **기획 의도**: 새로운 강의에 진입할 때마다 밑그림 트레이싱 가이드(`isTracing`)의 상태를 기본적으로 비활성화(`false`)되도록 강제했습니다.
+* **효과**: 정답을 기계적으로 따라 그리는 모방에 길들지 않고, 학습자 스스로 사물의 비율과 균형감을 관찰하고 형태적 본질을 찾아갈 수 있도록 스스로의 선택권을 보장합니다.
+
+#### 2.3 인지적 부하 최소화 및 직관적 시각 피드백
+* **기획 의도**: 불필요한 Alert 모달창이나 토스트 메시지로 드로잉의 몰입을 깨는 대신, 실행 취소/다시 실행(Undo/Redo) 한계치 도달 시 툴바 아이콘을 즉시 비활성화(Disabled) 상태로 흐릿하게 변경했습니다.
+* **효과**: 학습자가 선을 그으며 시선이 분산되는 요소를 차단하고, 도구 상태를 직관적으로 인지할 수 있는 환경을 선사합니다.
+
+---
+
+### 3. 기술적 의사결정 및 문제 해결 과정 (Technical Decisions & QA)
+
+#### ⚡ 이슈 1: 캔버스 타임머신 메모리 누수(Memory Leak) 방어
+* **문제 상황**:
+  - 다중 레이어 구조에서 캔버스 획이 기록될 때마다, 전체 레이어 객체를 `structuredClone`을 통해 깊은 복사하여 히스토리 배열에 무제한 스택 형태로 누적했습니다.
+  - 이로 인해 선 획수가 매우 많은 고밀도 드로잉 시, 메모리가 수백 MB 이상 비대해져 모바일 브라우저가 크래시되거나 버벅임 현상이 발생하는 심각한 자원 누수 문제가 발생했습니다.
+* **해결 방안 (FIFO 큐 및 포인터 조정)**:
+  - 히스토리 큐의 최대 저장 한계 상수를 `MAX_HISTORY = 20`으로 도입.
+  - 새 스냅샷이 추가될 때 배열의 크기가 20을 초과하면 가장 오래된 스냅샷을 잘라내는 **FIFO(선입선출) 슬라이싱(`slice(1)`) 알고리즘**을 연동했습니다.
+  - 슬라이싱 후 인덱스 오버플로우가 생기지 않도록, 현재 단계 포인터(`step`)를 새 배열의 마지막 인덱스(`newHistory.length - 1`)로 정교하게 강제 정렬시켰습니다.
+* **성능 효과**:
+  - 메모리 힙 사용량을 상시 안전 범위 내로 묶어둠으로써 기기 리소스를 절약하고 구형 태블릿에서도 끊김 없는 프레임 레이트를 달성했습니다.
+
+#### ⚡ 이슈 2: 초경량화를 위한 '선택과 집중' (기능 롤백 및 배제)
+* **결정 1: 텍스트(Text) 입력 도구의 과감한 롤백**
+  - *원인*: HTML 텍스트 영역 오버레이와 Canvas 간의 이중 좌표계(Offset & Scale) 변환 및 Z-Index 겹침 현상으로 인해 UI 레이아웃의 복잡도가 증가하고 입력 창이 가려지는 결함이 빈발했습니다.
+  - *의사결정*: 교육용 드로잉 코어(선, 레이어, 줌/팬)의 안정성을 저해하는 복잡한 요소를 제거하기 위해 관련 텍스트 상태 및 컴포넌트를 코드 수준에서 완전히 철회(Rollback)하였습니다. 이로써 프로젝트 경량화와 구조적 가치를 대폭 상승시켰습니다.
+* **결정 2: 페인트통(Flood Fill) 자동 채우기 기능 배제**
+  - *원인*: 래스터 이미지 픽셀 탐색 및 씨앗 채우기(Seed Fill) 연산은 CPU 리소스를 많이 소모하며 저사양 모바일 환경에 악영향을 줍니다.
+  - *의사결정*: 성능적 이슈를 넘어, **'마우스나 터치 펜으로 스스로 면을 가득 칠하면서 형태와 경계선의 깊이, 색의 밀도를 온몸으로 익혀야 한다'**는 교육 철학에 부합하도록 페인트통 대신 투명도 브러시와 선 두께를 조절하여 직접 채색하는 교육적 결여 방식을 고수하였습니다.
+
+---
+
+### 4. 향후 과제 (Next Steps)
+
+1. **내보내기 기능의 정밀화**: 드로잉 결과물 PNG 저장 시, 사용자가 설정한 가이드라인 격자선(`isGrid`) 및 트레이싱 밑그림 레이어는 캔버스 뷰에서 일시 숨김 처리하여, 순수 학습자가 그린 아트워크 선화만 정밀 분리 추출하는 내보내기 성능 강화.
+2. **PWA 기반 모바일 앱 화**: Vite PWA 플러그인을 결합하여 오프라인 환경에서도 인터넷 연결 없이 웹 앱의 오프라인 모드로 실행 가능하게 개발하고, 모바일 기기 홈 화면에 앱 바로가기 아이콘을 추가할 수 있는 네이티브 앱에 준하는 편의성 확보.
+3. **웹 호스팅 배포**: Vercel/Netlify 배포 파이프라인을 구축하여 접근 경로 및 배포 편의성 향상.

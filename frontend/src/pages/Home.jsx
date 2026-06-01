@@ -17,7 +17,7 @@ const Home = () => {
         {/* Header Section */}
         <div style={{ textAlign: 'center', marginBottom: '50px' }}>
           <h1 style={{ color: '#1a1b1e', fontSize: '2.5rem', fontWeight: '800', marginBottom: '10px' }}>
-            🎨 스마트 디지털 미술 클래스
+            🎨 모두의 미술 수업
           </h1>
           <p style={{ color: '#495057', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
             필압과 기교 대신 사물의 본질적인 형태와 선, 색에 집중하는 체계적인 미술 커리큘럼입니다.
